@@ -1,0 +1,112 @@
+[gd_scene load_steps=8 format=3 uid="uid://cyj6nj1qmu8lk"]
+
+[ext_resource type="Script" path="res://scripts/main/MainGameScript.gd" id="1_0000"]
+[ext_resource type="Script" path="res://scripts/managers/GameManager.gd" id="1_1234"]
+[ext_resource type="Script" path="res://scripts/controllers/PaddleController.gd" id="2_5678"]
+[ext_resource type="Script" path="res://scripts/controllers/BallController.gd" id="3_9012"]
+[ext_resource type="Script" path="res://scripts/managers/LevelManager.gd" id="4_3456"]
+[ext_resource type="Script" path="res://scripts/managers/UIManager.gd" id="5_7890"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
+size = Vector2(80, 12)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_1"]
+radius = 8.0
+
+[node name="MainGame" type="Node2D"]
+script = ExtResource("1_0000")
+
+[node name="GameManager" type="Node" parent="."]
+script = ExtResource("1_1234")
+
+[node name="LevelManager" type="Node" parent="."]
+script = ExtResource("4_3456")
+
+[node name="Paddle" type="CharacterBody2D" parent="."]
+position = Vector2(400, 550)
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("2_5678")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Paddle"]
+shape = SubResource("RectangleShape2D_1")
+
+[node name="Sprite" type="ColorRect" parent="Paddle"]
+offset_left = -40.0
+offset_top = -6.0
+offset_right = 40.0
+offset_bottom = 6.0
+color = Color(1, 1, 1, 1)
+
+[node name="Ball" type="RigidBody2D" parent="."]
+position = Vector2(400, 530)
+collision_layer = 1
+collision_mask = 14
+gravity_scale = 0.0
+freeze = true
+bounce = 1.0
+script = ExtResource("3_9012")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ball"]
+shape = SubResource("CircleShape2D_1")
+
+[node name="Sprite" type="ColorRect" parent="Ball"]
+offset_left = -8.0
+offset_top = -8.0
+offset_right = 8.0
+offset_bottom = 8.0
+color = Color(1, 1, 0, 1)
+
+[node name="UIManager" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+script = ExtResource("5_7890")
+
+[node name="ScoreLabel" type="Label" parent="UIManager"]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 150.0
+offset_bottom = 50.0
+text = "Score: 0"
+
+[node name="LivesLabel" type="Label" parent="UIManager"]
+layout_mode = 0
+offset_left = 200.0
+offset_top = 20.0
+offset_right = 330.0
+offset_bottom = 50.0
+text = "Lives: 3"
+
+[node name="LevelLabel" type="Label" parent="UIManager"]
+layout_mode = 0
+offset_left = 400.0
+offset_top = 20.0
+offset_right = 530.0
+offset_bottom = 50.0
+text = "Level: 1"
+
+[node name="StateLabel" type="Label" parent="UIManager"]
+layout_mode = 0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -20.0
+offset_right = 150.0
+offset_bottom = 20.0
+text = "Press SPACE to Start"
+horizontal_alignment = 1
+
+[node name="InstructionsLabel" type="Label" parent="UIManager"]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 550.0
+offset_right = 780.0
+offset_bottom = 580.0
+text = "Controls: A/D or Arrow Keys to move, SPACE to launch, R to restart"
