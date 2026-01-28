@@ -58,8 +58,8 @@ func _apply_common_fixes() -> void:
 	print("[MainGame] Applying common fixes...")
 
 	# Fix input map if needed - with error handling
-	if FixCommonIssues:
-		FixCommonIssues.fix_input_map()
+	if FixCommonIssuesClass:
+		FixCommonIssuesClass.fix_input_map()
 		print("[MainGame] Common fixes applied successfully")
 	else:
 		print("[MainGame] Warning: FixCommonIssues class not available")
