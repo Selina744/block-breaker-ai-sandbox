@@ -8,6 +8,9 @@ extends Node2D
 ## better error reporting and graceful fallback behavior.
 ##
 
+# Preload helper classes
+const FixCommonIssuesClass = preload("res://tests/FixCommonIssues.gd")
+
 # Manager and controller references with safe initialization
 var game_manager: GameManager
 var level_manager: LevelManager
@@ -54,8 +57,12 @@ func _ready() -> void:
 func _apply_common_fixes() -> void:
 	print("[MainGame] Applying common fixes...")
 
-	# Fix input map if needed
-	FixCommonIssues.fix_input_map()
+	# Fix input map if needed - with error handling
+	if FixCommonIssues:
+		FixCommonIssues.fix_input_map()
+		print("[MainGame] Common fixes applied successfully")
+	else:
+		print("[MainGame] Warning: FixCommonIssues class not available")
 
 ##
 ## Safely get references to all child nodes

@@ -32,9 +32,7 @@ var test_start_time: float = 0
 ##
 func start_test(test_name: String) -> void:
 	current_test_name = test_name
-	test_start_time = Time.get_time_dict_from_system().hour * 3600.0 + \
-					  Time.get_time_dict_from_system().minute * 60.0 + \
-					  Time.get_time_dict_from_system().second
+	test_start_time = Time.get_time_msec()
 	tests_run += 1
 	print("[TEST] Starting: %s" % test_name)
 
@@ -183,10 +181,8 @@ func all_tests_passed() -> bool:
 ## @returns: Test duration in seconds
 ##
 func _get_test_duration() -> float:
-	var current_time = Time.get_time_dict_from_system().hour * 3600.0 + \
-					   Time.get_time_dict_from_system().minute * 60.0 + \
-					   Time.get_time_dict_from_system().second
-	return current_time - test_start_time
+	var current_time = Time.get_time_msec()
+	return (current_time - test_start_time) / 1000.0
 
 ##
 ## Utility function to safely get a node with error handling

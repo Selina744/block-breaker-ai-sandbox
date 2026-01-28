@@ -9,13 +9,16 @@ class_name SceneValidator
 ## This helps identify missing nodes, incorrect paths, and script issues.
 ##
 
+# Preload required classes
+const TestFrameworkClass = preload("res://tests/TestFramework.gd")
+
 var test_framework: TestFramework
 
 ##
 ## Initialize the validator
 ##
 func _ready() -> void:
-	test_framework = TestFramework.new()
+	test_framework = TestFrameworkClass.new()
 	add_child(test_framework)
 
 ##
@@ -39,8 +42,19 @@ func validate_main_scene() -> void:
 func validate_scene_structure() -> void:
 	test_framework.start_test("Scene Structure Validation")
 
-	var main_scene = get_tree().current_scene
-	if not test_framework.assert_not_null(main_scene, "Main scene should exist"):
+	# Load MainGame scene to validate its structure
+	var main_scene_path = "res://scenes/main/MainGame.tscn"
+	if not ResourceLoader.exists(main_scene_path):
+		test_framework.fail_test("MainGame scene file not found")
+		return
+
+	var main_scene_resource = load(main_scene_path)
+	if not main_scene_resource:
+		test_framework.fail_test("Cannot load MainGame scene")
+		return
+
+	var main_scene = main_scene_resource.instantiate()
+	if not test_framework.assert_not_null(main_scene, "Main scene should instantiate"):
 		return
 
 	# Check for required nodes in MainGame scene
@@ -81,6 +95,9 @@ func validate_scene_structure() -> void:
 				return
 
 	test_framework.pass_test("Scene structure is valid")
+
+	# Clean up the instantiated scene
+	main_scene.queue_free()
 
 ##
 ## Validate script attachments and class names
@@ -211,25 +228,25 @@ func validate_resource_loading() -> void:
 
 	# Check if brick scene exists and can be loaded
 	var brick_scene_path = "res://scenes/components/Brick.tscn"
+	var brick_instance = null
+
 	if not ResourceLoader.exists(brick_scene_path):
 		test_framework.fail_test("Brick scene not found: " + brick_scene_path)
-		return
+	else:
+		var brick_scene = load(brick_scene_path)
+		if not brick_scene:
+			test_framework.fail_test("Cannot load brick scene: " + brick_scene_path)
+		else:
+			# Try to instantiate brick scene
+			brick_instance = brick_scene.instantiate()
+			if not brick_instance:
+				test_framework.fail_test("Cannot instantiate brick scene")
+			else:
+				test_framework.pass_test("Resource loading works correctly")
 
-	var brick_scene = load(brick_scene_path)
-	if not brick_scene:
-		test_framework.fail_test("Cannot load brick scene: " + brick_scene_path)
-		return
-
-	# Try to instantiate brick scene
-	var brick_instance = brick_scene.instantiate()
-	if not brick_instance:
-		test_framework.fail_test("Cannot instantiate brick scene")
-		return
-
-	# Clean up
-	brick_instance.queue_free()
-
-	test_framework.pass_test("Resource loading works correctly")
+	# Clean up - always execute regardless of test outcome
+	if brick_instance:
+		brick_instance.queue_free()
 
 ##
 ## Generate comprehensive diagnostic report
@@ -253,8 +270,8 @@ func generate_diagnostic_report() -> void:
 	# Node count
 	print("Total Nodes: %d" % get_tree().get_node_count())
 
-	# Check for errors in console
-	var error_count = Engine.get_singleton("EditorInterface")
+	# Runtime environment info
+	print("Platform: %s" % OS.get_name())
 	print("Errors: Check console for script errors or warnings")
 
 	print("=".repeat(60))

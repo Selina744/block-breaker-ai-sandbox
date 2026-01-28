@@ -13,6 +13,11 @@ extends Node
 ## 3. Check console output for test results and error reports
 ##
 
+# Preload test classes to ensure they're available
+const TestFrameworkClass = preload("res://tests/TestFramework.gd")
+const SceneValidatorClass = preload("res://tests/debug/SceneValidator.gd")
+const GameManagerTestsClass = preload("res://tests/unit/GameManagerTests.gd")
+
 ##
 ## Main entry point - run all tests
 ##
@@ -36,14 +41,14 @@ func run_all_tests() -> void:
 
 	# 1. Scene Validation
 	print("\n--- SCENE VALIDATION ---")
-	var scene_validator = SceneValidator.new()
+	var scene_validator = SceneValidatorClass.new()
 	add_child(scene_validator)
 	scene_validator.validate_main_scene()
 	all_passed = all_passed and scene_validator.test_framework.all_tests_passed()
 
 	# 2. GameManager Unit Tests
 	print("\n--- GAME MANAGER TESTS ---")
-	var game_manager_tests = GameManagerTests.new()
+	var game_manager_tests = GameManagerTestsClass.new()
 	add_child(game_manager_tests)
 	game_manager_tests.run_tests()
 	all_passed = all_passed and game_manager_tests.test_framework.all_tests_passed()
@@ -74,23 +79,23 @@ func run_integration_tests() -> void:
 	# Test main scene loading
 	framework.start_test("Main Scene Loading")
 
+	var main_scene_instance = null
+	var brick_instance = null
+
 	# Try to load the main scene
 	var main_scene_path = "res://scenes/main/MainGame.tscn"
 	if not ResourceLoader.exists(main_scene_path):
 		framework.fail_test("Main scene file not found")
-		return
-
-	var main_scene_resource = load(main_scene_path)
-	if not main_scene_resource:
-		framework.fail_test("Cannot load main scene resource")
-		return
-
-	var main_scene_instance = main_scene_resource.instantiate()
-	if not main_scene_instance:
-		framework.fail_test("Cannot instantiate main scene")
-		return
-
-	framework.pass_test("Main scene loads correctly")
+	else:
+		var main_scene_resource = load(main_scene_path)
+		if not main_scene_resource:
+			framework.fail_test("Cannot load main scene resource")
+		else:
+			main_scene_instance = main_scene_resource.instantiate()
+			if not main_scene_instance:
+				framework.fail_test("Cannot instantiate main scene")
+			else:
+				framework.pass_test("Main scene loads correctly")
 
 	# Test level file loading
 	framework.start_test("Level File Loading")
@@ -98,23 +103,20 @@ func run_integration_tests() -> void:
 	var level_path = "res://levels/level_1.json"
 	if not FileAccess.file_exists(level_path):
 		framework.fail_test("Level 1 file not found")
-		return
+	else:
+		var file = FileAccess.open(level_path, FileAccess.READ)
+		if not file:
+			framework.fail_test("Cannot open level file")
+		else:
+			var json_text = file.get_as_text()
+			file.close()
 
-	var file = FileAccess.open(level_path, FileAccess.READ)
-	if not file:
-		framework.fail_test("Cannot open level file")
-		return
-
-	var json_text = file.get_as_text()
-	file.close()
-
-	var json = JSON.new()
-	var parse_result = json.parse(json_text)
-	if parse_result != OK:
-		framework.fail_test("Invalid JSON in level file")
-		return
-
-	framework.pass_test("Level file loads correctly")
+			var json = JSON.new()
+			var parse_result = json.parse(json_text)
+			if parse_result != OK:
+				framework.fail_test("Invalid JSON in level file")
+			else:
+				framework.pass_test("Level file loads correctly")
 
 	# Test brick scene loading
 	framework.start_test("Brick Scene Loading")
@@ -122,23 +124,22 @@ func run_integration_tests() -> void:
 	var brick_path = "res://scenes/components/Brick.tscn"
 	if not ResourceLoader.exists(brick_path):
 		framework.fail_test("Brick scene file not found")
-		return
+	else:
+		var brick_scene = load(brick_path)
+		if not brick_scene:
+			framework.fail_test("Cannot load brick scene")
+		else:
+			brick_instance = brick_scene.instantiate()
+			if not brick_instance:
+				framework.fail_test("Cannot instantiate brick")
+			else:
+				framework.pass_test("Brick scene loads correctly")
 
-	var brick_scene = load(brick_path)
-	if not brick_scene:
-		framework.fail_test("Cannot load brick scene")
-		return
-
-	var brick_instance = brick_scene.instantiate()
-	if not brick_instance:
-		framework.fail_test("Cannot instantiate brick")
-		return
-
-	framework.pass_test("Brick scene loads correctly")
-
-	# Clean up test instances
-	main_scene_instance.queue_free()
-	brick_instance.queue_free()
+	# Clean up test instances - always execute regardless of test outcomes
+	if main_scene_instance:
+		main_scene_instance.queue_free()
+	if brick_instance:
+		brick_instance.queue_free()
 
 	framework.print_test_summary()
 

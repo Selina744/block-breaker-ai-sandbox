@@ -8,6 +8,10 @@ class_name GameManagerTests
 ## scoring, lives tracking, and game flow functionality.
 ##
 
+# Preload required classes
+const TestFrameworkClass = preload("res://tests/TestFramework.gd")
+const GameManagerClass = preload("res://scripts/managers/GameManager.gd")
+
 var test_framework: TestFramework
 var game_manager: GameManager
 
@@ -15,7 +19,7 @@ var game_manager: GameManager
 ## Initialize test environment
 ##
 func _ready() -> void:
-	test_framework = TestFramework.new()
+	test_framework = TestFrameworkClass.new()
 	add_child(test_framework)
 
 ##
@@ -44,7 +48,7 @@ func _setup_test_environment() -> void:
 	if game_manager:
 		game_manager.queue_free()
 
-	game_manager = GameManager.new()
+	game_manager = GameManagerClass.new()
 	add_child(game_manager)
 
 ##
