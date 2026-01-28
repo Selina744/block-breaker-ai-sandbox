@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://diagnostic_runner"]
+
+[ext_resource type="Script" path="res://tests/DiagnosticRunner.gd" id="1_diag"]
+
+[node name="DiagnosticRunner" type="Node"]
+script = ExtResource("1_diag")

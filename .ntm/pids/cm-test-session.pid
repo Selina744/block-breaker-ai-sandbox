@@ -1,7 +1,7 @@
 {
-  "pid": 89001,
-  "port": 8200,
+  "pid": 107635,
+  "port": 45995,
   "owner_id": "test-session",
   "command": "cm",
-  "started_at": "2026-01-28T02:29:00.75890157Z"
+  "started_at": "2026-01-28T04:47:06.440304232Z"
 }

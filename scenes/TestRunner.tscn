@@ -1,0 +1,9 @@
+[gd_scene load_steps=5 format=3 uid="uid://test_runner_scene"]
+
+[ext_resource type="Script" path="res://tests/TestRunner.gd" id="1_test"]
+[ext_resource type="Script" path="res://tests/TestFramework.gd" id="2_framework"]
+[ext_resource type="Script" path="res://tests/unit/GameManagerTests.gd" id="3_unit"]
+[ext_resource type="Script" path="res://tests/debug/SceneValidator.gd" id="4_debug"]
+
+[node name="TestRunner" type="Node"]
+script = ExtResource("1_test")
