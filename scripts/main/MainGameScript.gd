@@ -49,26 +49,37 @@ func _ready() -> void:
 func _setup_system_references() -> void:
 	print("[MainGame] Setting up system references")
 
-	# Set game manager references in other systems
-	if level_manager and game_manager:
-		level_manager.set_game_manager_reference(game_manager)
-		game_manager.level_manager = level_manager
+	# Validate all critical nodes exist before proceeding
+	var missing_nodes = []
+	if not game_manager:
+		missing_nodes.append("GameManager")
+	if not level_manager:
+		missing_nodes.append("LevelManager")
+	if not ball:
+		missing_nodes.append("Ball (BallController)")
+	if not paddle:
+		missing_nodes.append("Paddle (PaddleController)")
+	if not ui_manager:
+		missing_nodes.append("UIManager")
 
-	# Set paddle and ball references
-	if ball and paddle:
-		ball.set_paddle_reference(paddle)
+	if missing_nodes.size() > 0:
+		print("[MainGame] ERROR: Missing critical nodes: %s" % ", ".join(missing_nodes))
+		print("[MainGame] Game cannot function without these nodes. Check scene structure.")
+		return
 
-	if ball and game_manager:
-		ball.set_game_manager_reference(game_manager)
-		game_manager.ball_controller = ball
+	# All nodes exist, set up references safely
+	level_manager.set_game_manager_reference(game_manager)
+	game_manager.level_manager = level_manager
 
-	if paddle and game_manager:
-		game_manager.paddle_controller = paddle
+	ball.set_paddle_reference(paddle)
+	ball.set_game_manager_reference(game_manager)
+	game_manager.ball_controller = ball
 
-	# Set UI manager reference
-	if ui_manager and game_manager:
-		ui_manager.connect_to_game_manager(game_manager)
-		game_manager.ui_manager = ui_manager
+	game_manager.paddle_controller = paddle
+
+	# Set UI manager reference (already validated to exist)
+	ui_manager.connect_to_game_manager(game_manager)
+	game_manager.ui_manager = ui_manager
 
 	print("[MainGame] System references configured")
 

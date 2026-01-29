@@ -52,6 +52,11 @@ func _ready() -> void:
 ## @returns: true if level loaded successfully
 ##
 func load_level(level_number: int) -> bool:
+	# Validate level number for security (prevent negative or excessively large values)
+	if level_number < 1 or level_number > 999:
+		print("[LevelManager] SECURITY: Invalid level number: %d (must be 1-999)" % level_number)
+		return false
+
 	print("[LevelManager] Loading level %d" % level_number)
 
 	current_level_number = level_number
@@ -123,7 +128,126 @@ func _create_brick_container() -> void:
 ## @param file_path: Path to the level JSON file
 ## @returns: Dictionary containing level data, or empty dict if failed
 ##
+##
+## Validate the structure and content of level JSON data for security
+## @param level_data: The parsed JSON data to validate
+## @returns: true if valid, false otherwise
+##
+func _validate_level_json(level_data) -> bool:
+	# Check if data is a dictionary
+	if not level_data is Dictionary:
+		print("[LevelManager] ERROR: Level data must be a dictionary")
+		return false
+
+	var data = level_data as Dictionary
+
+	# Validate required fields exist
+	if not data.has("name") or not data.has("bricks"):
+		print("[LevelManager] ERROR: Level data missing required fields (name, bricks)")
+		return false
+
+	# Validate field types
+	if not data["name"] is String:
+		print("[LevelManager] ERROR: Level name must be a string")
+		return false
+
+	if not data["bricks"] is Array:
+		print("[LevelManager] ERROR: Bricks must be an array")
+		return false
+
+	var bricks = data["bricks"] as Array
+
+	# Validate brick count is reasonable (prevent DoS via excessive bricks)
+	if bricks.size() > 1000:
+		print("[LevelManager] ERROR: Too many bricks (max 1000)")
+		return false
+
+	# Valid brick types
+	var valid_types = ["BASIC", "STRONG", "SPECIAL"]
+
+	# Validate each brick
+	for i in range(bricks.size()):
+		var brick = bricks[i]
+
+		if not brick is Dictionary:
+			print("[LevelManager] ERROR: Brick %d is not a dictionary" % i)
+			return false
+
+		var brick_dict = brick as Dictionary
+
+		# Check required fields
+		if not (brick_dict.has("x") and brick_dict.has("y") and brick_dict.has("type")):
+			print("[LevelManager] ERROR: Brick %d missing required fields (x, y, type)" % i)
+			return false
+
+		# Validate coordinate types and ranges
+		if not (brick_dict["x"] is int or brick_dict["x"] is float):
+			print("[LevelManager] ERROR: Brick %d x coordinate must be a number" % i)
+			return false
+
+		if not (brick_dict["y"] is int or brick_dict["y"] is float):
+			print("[LevelManager] ERROR: Brick %d y coordinate must be a number" % i)
+			return false
+
+		# Validate coordinate bounds (assuming 800x600 game area)
+		var x = float(brick_dict["x"])
+		var y = float(brick_dict["y"])
+
+		if x < 0 or x > 800 or y < 0 or y > 600:
+			print("[LevelManager] ERROR: Brick %d coordinates out of bounds (x=%f, y=%f)" % [i, x, y])
+			return false
+
+		# Validate brick type
+		if not brick_dict["type"] is String:
+			print("[LevelManager] ERROR: Brick %d type must be a string" % i)
+			return false
+
+		if not brick_dict["type"] in valid_types:
+			print("[LevelManager] ERROR: Brick %d has invalid type '%s'" % [i, brick_dict["type"]])
+			return false
+
+	print("[LevelManager] Level data validation passed")
+	return true
+
+##
+## Validate file path to prevent directory traversal attacks
+## @param file_path: The file path to validate
+## @returns: true if safe, false otherwise
+##
+func _validate_file_path(file_path: String) -> bool:
+	# Check for directory traversal patterns
+	if "../" in file_path or "..\\" in file_path:
+		print("[LevelManager] ERROR: Directory traversal detected in path: %s" % file_path)
+		return false
+
+	# Check for absolute paths (should be relative to levels directory)
+	if file_path.begins_with("/") or (file_path.length() > 1 and file_path[1] == ":"):
+		print("[LevelManager] ERROR: Absolute path not allowed: %s" % file_path)
+		return false
+
+	# Check for hidden files/directories
+	if "./" in file_path or ".\\" in file_path:
+		print("[LevelManager] ERROR: Hidden path elements not allowed: %s" % file_path)
+		return false
+
+	# Must be a .json file
+	if not file_path.ends_with(".json"):
+		print("[LevelManager] ERROR: Only .json files allowed: %s" % file_path)
+		return false
+
+	return true
+
+##
+## Load level data from a JSON file with security validation
+## @param file_path: Path to the level JSON file
+## @returns: Dictionary containing level data, or empty dict if failed
+##
 func _load_level_data(file_path: String) -> Dictionary:
+	# Validate file path for security
+	if not _validate_file_path(file_path):
+		print("[LevelManager] SECURITY: Invalid file path rejected: %s" % file_path)
+		return {}
+
 	if not FileAccess.file_exists(file_path):
 		print("[LevelManager] Level file not found: %s" % file_path)
 		return {}
@@ -136,6 +260,11 @@ func _load_level_data(file_path: String) -> Dictionary:
 	var json_text = file.get_as_text()
 	file.close()
 
+	# Limit file size to prevent DoS attacks (1MB max)
+	if json_text.length() > 1048576:
+		print("[LevelManager] SECURITY: File too large (max 1MB): %s" % file_path)
+		return {}
+
 	var json = JSON.new()
 	var parse_result = json.parse(json_text)
 
@@ -143,7 +272,12 @@ func _load_level_data(file_path: String) -> Dictionary:
 		print("[LevelManager] Failed to parse level JSON: %s" % file_path)
 		return {}
 
-	print("[LevelManager] Level data loaded successfully from: %s" % file_path)
+	# Validate the parsed JSON structure and content
+	if not _validate_level_json(json.data):
+		print("[LevelManager] SECURITY: Level data failed validation: %s" % file_path)
+		return {}
+
+	print("[LevelManager] Level data loaded and validated successfully from: %s" % file_path)
 	return json.data
 
 ##

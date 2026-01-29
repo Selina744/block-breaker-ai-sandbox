@@ -86,9 +86,13 @@ func _physics_process(delta: float) -> void:
 ## Handle input for ball launching
 ##
 func _input(event: InputEvent) -> void:
-	# Launch ball when space is pressed and ball is attached to paddle
+	# Launch ball when space is pressed, ball is attached to paddle, and game is in ready state
 	if event.is_action_pressed("launch_ball") and is_attached_to_paddle:
-		launch_ball()
+		# Check if game is in the correct state to launch ball
+		if game_manager and game_manager.is_game_ready():
+			launch_ball()
+		else:
+			print("[BallController] Cannot launch ball - game not in ready state")
 
 ##
 ## Launch the ball from the paddle with initial upward velocity
@@ -101,6 +105,10 @@ func launch_ball() -> void:
 
 	is_attached_to_paddle = false
 	freeze = false
+
+	# Notify game manager that game has started
+	if game_manager:
+		game_manager.start_game()
 
 	# Set initial upward velocity with slight random angle
 	var launch_angle = randf_range(-PI/6, PI/6)  # ±30 degrees variation
@@ -194,8 +202,12 @@ func _handle_paddle_collision(paddle_body: PaddleController) -> void:
 	var current_speed = linear_velocity.length()
 	linear_velocity = bounce_direction * current_speed
 
-	# Optional: Increase speed slightly on paddle hits
-	linear_velocity *= speed_increase_rate
+	# Optional: Increase speed slightly on paddle hits, but only if not at max speed
+	if current_speed < max_speed * 0.9:  # Only increase when below 90% of max speed
+		linear_velocity *= speed_increase_rate
+		# Clamp to maximum speed to prevent runaway velocity
+		if linear_velocity.length() > max_speed:
+			linear_velocity = linear_velocity.normalized() * max_speed
 
 	print("[BallController] Paddle bounce - New velocity: %s" % linear_velocity)
 
@@ -218,8 +230,13 @@ func _handle_brick_collision(brick: Node) -> void:
 	# More sophisticated collision detection could be added here
 	linear_velocity.y = -linear_velocity.y
 
-	# Increase ball speed slightly
-	linear_velocity *= speed_increase_rate
+	# Increase ball speed slightly, but only if not at max speed
+	var current_speed = linear_velocity.length()
+	if current_speed < max_speed * 0.9:  # Only increase when below 90% of max speed
+		linear_velocity *= speed_increase_rate
+		# Clamp to maximum speed to prevent runaway velocity
+		if linear_velocity.length() > max_speed:
+			linear_velocity = linear_velocity.normalized() * max_speed
 
 ##
 ## Handle ball going out of bounds (life loss)

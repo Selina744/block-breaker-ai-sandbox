@@ -134,10 +134,15 @@ func lose_life() -> void:
 
 	if lives <= 0:
 		end_game()
-	else:
-		# Reset ball position for next attempt
-		if ball_controller:
-			ball_controller.reset_ball()
+		# Don't reset ball or change state when game is over
+		return
+
+	# Reset ball position for next attempt only if game is still active
+	if current_state != GameState.GAME_OVER and ball_controller:
+		ball_controller.reset_ball()
+
+	# Only set to READY if game is still active
+	if current_state != GameState.GAME_OVER:
 		current_state = GameState.READY
 
 ##
